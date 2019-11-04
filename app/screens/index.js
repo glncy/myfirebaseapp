@@ -12,7 +12,7 @@ class Index extends Component {
 
     constructor(props) {
         super(props);
-        this.unsubscribe = nulll;
+        this.unsubscribe = null;
         this.state = {
             user: null,
             email: '',
@@ -55,7 +55,7 @@ class Index extends Component {
     
     render() {
         const { email, password } = this.state;
-
+        const { message } = this.state;
         return(
             <View style={{ flex: 1 }}>
                 <View style={{ justifyContent: 'center', alignItems: 'center'}}>
@@ -90,7 +90,10 @@ class Index extends Component {
                     />
                 </View>
                 <View style={{ justifyContent: 'center', alignItems: 'center'}}>
-                    <TouchableOpacity>
+                    <Text>{message}</Text>
+                </View>
+                <View style={{ justifyContent: 'center', alignItems: 'center'}}>
+                    <TouchableOpacity onPress={this.signIn}>
                         <Text>Login</Text>
                     </TouchableOpacity>
                 </View>
