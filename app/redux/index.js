@@ -1,5 +1,5 @@
 import * as key from '../config/constants';
-import firebase from 'react-native-firebase';
+import firebase from '@react-native-firebase/app';
 
 export default function reducer(state = {}, action) {
     switch (action.type) {
