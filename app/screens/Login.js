@@ -23,6 +23,7 @@ class Login extends Component {
         super(props);
         this.unsubscribe = null;
         this.state = {
+            errorCode: '',
             email: '',
             password: '',
             message: '',
@@ -66,7 +67,18 @@ class Login extends Component {
                     ToastAndroid.show('You are now Logged In.', ToastAndroid.LONG);
                     this.setState({ confirmResult, message: 'Validated', showAlert: false })
                 })
-                .catch((error) => this.setState({showAlert: false, message: `${error.message}`}));
+                .catch((error) => {
+                    if (error.code == 'auth/user-not-found'){
+                        this.setState({
+                            showAlert: false, showAlertError: true, errorCode: error.code
+                        });
+                    }
+                    else {
+                        this.setState({
+                            showAlert: false, showAlertError: true, errorCode: error.code
+                        });
+                    }
+            });
         }
         else {
             this.setState({
@@ -76,21 +88,38 @@ class Login extends Component {
     }
 
     renderErrorAlert = () => {
-        const { showAlertError } = this.state;
+        const { errorCode, email } = this.state;
+        const okayButton = 
+            <View>
+                <TouchableOpacity onPress={ () => this.setState({ showAlertError: false }) }>
+                    <View style={{ backgroundColor: '#dfe6e9', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 100 }}>
+                        <Text>Okay</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+        ;
+        const registerButton = 
+            <View>
+                <TouchableOpacity onPress={ () => {
+                    this.setState({ showAlertError: false, showAlert: false });
+                    this.props.navigation.navigate('Register', { email: email });
+                }}>
+                    <View style={{ backgroundColor: '#dfe6e9', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 100 }}>
+                        <Text>Register Here</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+        ;
         return (
         <View style={{ justifyContent: 'center', alignItems: 'center'}}>
             <View>
                 <Image source={ require('./../assets/images/exclamation-mark.png') } style={{ width: 80, height: 80 }}/>
             </View>
             <View style={{ paddingTop: 10 }}>
-                <Text>Please fill up all fields.</Text>
+                <Text>{errorCode == 'auth/user-not-found' ? "Uh oh! No Account Found. :(" : "Invalid Email and Password"}</Text>
             </View>
             <View style={{ paddingTop: 10 }}>
-                <TouchableOpacity onPress={ () => this.setState({ showAlertError: false }) }>
-                    <View style={{ backgroundColor: '#dfe6e9', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 100 }}>
-                        <Text>Okay</Text>
-                    </View>
-                </TouchableOpacity>
+                {errorCode == 'auth/user-not-found' ? registerButton : okayButton}
             </View>
         </View>
       );
@@ -142,9 +171,6 @@ class Login extends Component {
                             onChangeText={(value) => this.setState({ password: value })}
                             value={password}
                         />
-                    </View>
-                    <View style={{ justifyContent: 'center', alignItems: 'center'}}>
-                        <Text>{message}</Text>
                     </View>
                     <View style={{ alignItems: 'center'}}>
                         <TouchableOpacity onPress={this.signIn}>

@@ -25,6 +25,7 @@ class Register extends Component {
         this.unsubscribe = null;
         this.state = {
             user: null,
+            errorCode: '',
             email: '',
             password: '',
             message: '',
@@ -37,6 +38,7 @@ class Register extends Component {
     state = {};
 
     componentDidMount() {
+        const { navigation } = this.props;
         this.unsubscribe = auth().onAuthStateChanged((user) => {
             if (user) {
                 this.setState({ user: user.toJSON() });
@@ -44,7 +46,7 @@ class Register extends Component {
             } else {
                 this.setState({
                     user: null,
-                    email: '',
+                    email: navigation.getParam('email', ''),
                     password: '',
                     message: '',
                     firstName: '',
@@ -61,7 +63,7 @@ class Register extends Component {
 
     signUp = () => {
         const { email, password, showAlert, firstName, lastName } = this.state;
-        if ((email != "")&&(password != "")){
+        if ((email != "")&&(password != "")&&(firstName != "")&&(lastName != "")){
             console.log(this.unsubscribe());
             this.setState({
                 showAlert: true
@@ -80,28 +82,42 @@ class Register extends Component {
                             ToastAndroid.show('You are now Registered.', ToastAndroid.LONG);
                             this.setState({ confirmResult, showAlert: false })
                         })
-                        .catch((error) => this.setState({showAlert: false, message: `${error.message}`}));
+                        .catch((error) => this.setState({showAlert: false, showAlertError: true, errorCode: error.code}));
             })
                 .catch((error) => {
-                    this.setState({showAlert: false, message: `${error.message}`})
+                    this.setState({showAlert: false, showAlertError: true, errorCode: error.message})
                 });
         }
         else {
             this.setState({
-                showAlertError: true
+                showAlertError: true,
+                errorCode: 'no-fields'
             })
         }
     }
 
     renderErrorAlert = () => {
-        const { showAlertError } = this.state;
+        const { errorCode } = this.state;
+        let message;
+        if (errorCode == 'auth/email-already-in-use'){
+            message = "Email is Already in use";
+        }
+        else if (errorCode == 'auth/invalid-email'){
+            message = "Email is Invalid";
+        }
+        else if (errorCode == 'no-fields'){
+            message = "Please fill up all Fields";
+        }
+        else {
+            message = "Invalid Registration. Please try Again."
+        }
         return (
         <View style={{ justifyContent: 'center', alignItems: 'center'}}>
             <View>
                 <Image source={ require('./../assets/images/exclamation-mark.png') } style={{ width: 80, height: 80 }}/>
             </View>
             <View style={{ paddingTop: 10 }}>
-                <Text>Please fill up all fields.</Text>
+                <Text>{message}</Text>
             </View>
             <View style={{ paddingTop: 10 }}>
                 <TouchableOpacity onPress={ () => this.setState({ showAlertError: false }) }>

@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { View, Text, TextInput, Dimensions, TouchableOpacity, ImageBackground, Image, ScrollView, ToastAndroid } from 'react-native';
+import { View, Text, Dimensions, TouchableOpacity, ImageBackground, Image, ScrollView, ToastAndroid, ActivityIndicator } from 'react-native';
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { Avatar, Icon } from 'react-native-elements';
 // Styles
 import styles from './styles/Styles';
 
 import auth from '@react-native-firebase/auth';
+import database from '@react-native-firebase/database'
+import storage from '@react-native-firebase/storage'
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,28 +27,50 @@ class Menu extends Component {
             email: '',
             password: '',
             message: '',
+            imgProfile: '',
             confirmResult: null,
             showLogout: false,
-            showAlertError: false
+            showAlertError: false,
+            isInfoFetched: false,
         }
     }
 
     componentDidMount() {
         this.unsubscribe = auth().onAuthStateChanged((user) => {
             if (user) {
-                this.setState({ user: user.toJSON() });
+                this.setState({ user: user });
             } else {
-                this.setState({
-                    user: null,
-                    email: '',
-                    password: '',
-                    message: '',
-                    firstName: '',
-                    lastName: '',
-                    confirmResult: null
-                });
+                this.props.navigation.navigate('Auth');
             }
         });
+
+        this.focusListener = this.props.navigation.addListener('didFocus', () => {
+            const { user } = this.state;
+            this.updateInfo(user);
+        });
+    }
+
+    updateInfo = (user) => {
+        let filename;
+        this.setState({isInfoFetched: false});
+        const ref = database().ref(`/users/${user.uid}`);
+        ref.once('value')
+            .then((response) => {
+                const userInfo = response.val()
+                this.setState({
+                    firstName: userInfo.firstName,
+                    lastName: userInfo.lastName,
+                    email: user.email
+                });
+                return userInfo.imageProfile;
+            })
+            .then((filename) => {
+                const img = storage().ref(filename);
+                img.getDownloadURL()
+                    .then((response) => {
+                        this.setState({ imageProfile: response, isInfoFetched: true });
+                    });
+            });
     }
 
     signOut = () => {
@@ -58,7 +82,6 @@ class Menu extends Component {
                 showLogout: false
             });
             ToastAndroid.show('You are been Logged Out.', ToastAndroid.LONG);
-            this.props.navigation.navigate('Auth');
         })
     }
 
@@ -88,8 +111,8 @@ class Menu extends Component {
     }
     
     render() {
-        const { email, password, firstName, lastName } = this.state;
-        const { message, showLogout, showAlertError } = this.state;
+        const { email, password, firstName, lastName, imageProfile  } = this.state;
+        const { message, showLogout, showAlertError, isInfoFetched } = this.state;
         return(
             <View style={ styles.mainView }>
                 <ImageBackground source={require('./../assets/images/bg_main.jpg')} style={{width: '100%', height: '100%', }}>
@@ -97,21 +120,22 @@ class Menu extends Component {
                     <View style={{ alignItems: 'center', paddingVertical: 60 }}>
                         <Avatar
                             rounded
-                            source={{
-                                uri:
-                                    'https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg',
-                            }} 
+                            source={{ uri: imageProfile }} 
                             size="xlarge"
                             iconStyle={{
                                 width: 100,
                                 height: 100
                             }}
                         />
-                        <Text style={styles.profileNameText}>Juan Dela Cruz</Text>
-                        <Text style={styles.profileNameEmail}>juandelacruz@gmail.com</Text>
+                        <Text style={styles.profileNameText}>{firstName} {lastName}</Text>
+                        { isInfoFetched ? (
+                            <Text style={styles.profileNameEmail}>{email}</Text>
+                        ) : (
+                            <ActivityIndicator size="small" color="#0000ff"/>
+                        )}
                     </View>
                     <View style={{ alignItems: 'center', justifyContent: 'center'}}>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile')}>
                             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 25, paddingHorizontal: 10 }}>
                                 <Icon name='user' type='antdesign' size={30}/>
                                 <Text style={{ fontSize: 24 }}>  Profile</Text>

@@ -17,6 +17,7 @@ import Login from './app/screens/Login';
 import Register from './app/screens/Register';
 import Home from './app/screens/Home';
 import Menu from './app/screens/Menu';
+import Profile from './app/screens/Profile';
 
 const client = axios.create({
   method: 'GET',
@@ -78,7 +79,8 @@ const AuthStack = createStackNavigator({
 });
 
 const AppStack = createStackNavigator({
-  Home: MainTabScreen
+  Home: MainTabScreen,
+  Profile: Profile
 });
 
 const RootStack = createSwitchNavigator({
